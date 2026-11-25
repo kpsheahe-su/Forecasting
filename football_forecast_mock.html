@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Football Forecast 2026 (mock)</title>
+<style>
+  :root {
+    --bg: #f3f5f9; --card: #ffffff; --ink: #0f172a; --muted: #64748b;
+    --line: #e7ebf2; --accent: #2563eb; --good: #15803d; --bad: #dc2626;
+    --shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 4px 14px rgba(15, 23, 42, .04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b1020; --card: #131a2b; --ink: #e6ebf5; --muted: #8b97ad;
+      --line: #1f2a40; --accent: #60a5fa; --good: #4ade80; --bad: #f87171;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b1020; --card: #131a2b; --ink: #e6ebf5; --muted: #8b97ad;
+    --line: #1f2a40; --accent: #60a5fa; --good: #4ade80; --bad: #f87171;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+  header { padding: 22px 28px 10px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; margin: 0; display: flex; align-items: center; gap: 10px; }
+  header .meta { color: var(--muted); font-size: 12px; }
+  .badge { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #92400e; background: #fef3c7; padding: 3px 8px; border-radius: 999px; }
+
+  nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding: 0 28px; position: sticky; top: 0; background: var(--bg); z-index: 5; scrollbar-width: none; }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  nav.tabs button { flex: 0 0 auto; border: 0; background: transparent; color: var(--muted); padding: 10px 12px; cursor: pointer; font: inherit; font-weight: 500; border-radius: 8px 8px 0 0; white-space: nowrap; position: relative; }
+  nav.tabs button:hover { color: var(--ink); }
+  nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; }
+  nav.tabs button[aria-selected="true"]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px; border-radius: 2px; background: var(--accent); }
+
+  main { padding: 18px 28px 48px; max-width: 1440px; margin: 0 auto; }
+  section.panel { display: none; }
+  section.panel.active { display: block; }
+
+  /* 12-column grid mirroring the dashboard layout (x, y, w, h units) */
+  .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 34px; gap: 14px; }
+  .w { min-width: 0; overflow: hidden; }
+
+  /* one surface per widget: no nested boxes */
+  .surface { background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 14px 16px; height: 100%; display: flex; flex-direction: column; }
+  .t { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+
+  .kpi .big { font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .kpi .t { margin-bottom: 6px; }
+  .delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; margin-top: 6px; padding: 2px 8px; border-radius: 999px; }
+  .delta.up { color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+  .delta.down { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); }
+
+  /* section headings: no box, just a rule with an accent bar */
+  .heading { font-size: 15px; font-weight: 700; height: 100%; display: flex; align-items: flex-end; padding: 0 2px 6px; border-bottom: 1px solid var(--line); position: relative; }
+  .heading::before { content: ""; position: absolute; left: 0; bottom: -1px; width: 28px; height: 2px; background: var(--accent); border-radius: 2px; }
+  .sub { font-size: 12px; color: var(--muted); height: 100%; display: flex; align-items: center; padding: 0 2px; }
+
+  /* filters: quiet chips, no border */
+  .chip { height: 100%; display: flex; align-items: center; gap: 8px; background: var(--card); border-radius: 999px; box-shadow: var(--shadow); padding: 0 14px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; }
+  .chip b { color: var(--ink); font-weight: 600; }
+  .chip .caret { margin-left: auto; color: var(--muted); }
+
+  svg.chart { width: 100%; flex: 1; min-height: 90px; display: block; overflow: visible; }
+  .legend { display: flex; gap: 14px; font-size: 11px; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+
+  .tbl { overflow: auto; flex: 1; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 7px 8px; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--line); }
+  td { border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+
+  .ph { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; border-radius: 10px; background: repeating-linear-gradient(135deg, transparent 0 9px, var(--line) 9px 10px); }
+
+  @media (max-width: 860px) {
+    .grid { display: block; }
+    .w { margin-bottom: 14px; }
+    .w .surface { min-height: 120px; }
+    main { padding: 14px; }
+    header, nav.tabs { padding-left: 14px; padding-right: 14px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Football Forecast 2026 <span class="badge">Mock · dummy data</span></h1>
+  <div class="meta">Layout mirrors the Databricks dashboard. All values are placeholders.</div>
+</header>
+<nav class="tabs" role="tablist" id="tabs"></nav>
+<main id="main"></main>
+
+<script>
+const PAGES = [{"name": "Exec Summary - Placed", "widgets": [{"x": 6, "y": 0, "w": 6, "h": 1, "type": "filter-date-picker", "title": "Data Through", "field": "date"}, {"x": 0, "y": 1, "w": 12, "h": 1, "type": "text", "text": "Football Curves (Placed)"}, {"x": 0, "y": 2, "w": 6, "h": 8, "type": "line", "title": "Handle by Retained and Reax", "xlabel": "Date", "series": ["Retained - Forecast Handle", "Reax - Forecast Handle", "Retained - Actual Handle", "Reax - Actual Handle"], "fmt": "percent"}, {"x": 6, "y": 2, "w": 6, "h": 8, "type": "line", "title": "Actives by Retained and Reax", "xlabel": "Date", "series": ["Reax - Forecast Actives", "Retained - Forecast Actives", "Reax - Actual Actives", "Retained - Actual Actives"], "fmt": "percent"}, {"x": 0, "y": 10, "w": 6, "h": 8, "type": "line", "title": "Forecast Football Handle", "xlabel": "Date", "series": ["Actual Handle", "Forecasted Handle"], "fmt": "percent"}, {"x": 6, "y": 10, "w": 6, "h": 8, "type": "line", "title": "Forecast Football Actives", "xlabel": "Date", "series": ["Actual Actives", "Forecasted Actives"], "fmt": "percent"}, {"x": 0, "y": 18, "w": 12, "h": 1, "type": "text", "text": "Performance to Date"}, {"x": 0, "y": 19, "w": 4, "h": 3, "type": "counter", "title": "Total - Handle vs Forecast", "fmt": "percent", "field": "Handle Pct vs Forecast"}, {"x": 4, "y": 19, "w": 4, "h": 3, "type": "counter", "title": "Retained - Handle vs Forecast", "fmt": "percent", "field": "Handle Pct vs Forecast"}, {"x": 8, "y": 19, "w": 4, "h": 3, "type": "counter", "title": "Reax - Handle vs Forecast", "fmt": "percent", "field": "Handle Pct vs Forecast"}, {"x": 0, "y": 22, "w": 4, "h": 3, "type": "counter", "title": "Total - Actives vs Forecast", "fmt": "percent", "field": "Reax Pct vs Forecast"}, {"x": 4, "y": 22, "w": 4, "h": 3, "type": "counter", "title": "Retained - Actives vs Forecast", "fmt": "percent", "field": "Reax Pct vs Forecast"}, {"x": 8, "y": 22, "w": 4, "h": 3, "type": "counter", "title": "Reax - Actives vs Forecast", "fmt": "percent", "field": "Reax Pct vs Forecast"}, {"x": 0, "y": 25, "w": 4, "h": 3, "type": "counter", "title": "Total - Player Days vs Forecast", "fmt": "percent", "field": "Actives Pct vs Forecast"}, {"x": 4, "y": 25, "w": 4, "h": 3, "type": "counter", "title": "Retained - Player Days vs Forecast", "fmt": "percent", "field": "Actives Pct vs Forecast"}, {"x": 8, "y": 25, "w": 4, "h": 3, "type": "counter", "title": "Reax - Player Days vs Forecast", "fmt": "percent", "field": "Actives Pct vs Forecast"}]}, {"name": "Exec Summary - Settled", "widgets": [{"x": 4, "y": 0, "w": 4, "h": 1, "type": "filter-date-picker", "title": "Data Through", "field": "date"}, {"x": 8, "y": 0, "w": 4, "h": 1, "type": "filter-single-select", "title": "Sport", "field": "sport"}, {"x": 0, "y": 1, "w": 12, "h": 1, "type": "text", "text": "Football Curves"}, {"x": 0, "y": 2, "w": 6, "h": 8, "type": "line", "title": "Total Handle YoY", "xlabel": "Date", "series": ["Reax - Handle LY", "Retained - Handle LY", "Retained - Handle CY", "Reax - Handle CY"], "fmt": "number"}, {"x": 6, "y": 2, "w": 6, "h": 8, "type": "line", "title": "Total Actives YoY", "xlabel": "Date", "series": ["Reax - Actives CY", "Retained - Actives CY", "Reax - Actives LY", "Retained - Actives LY"], "fmt": "number"}, {"x": 0, "y": 10, "w": 6, "h": 8, "type": "line", "title": "NFL Handle YoY", "xlabel": "Date", "series": ["Reax - Handle LY", "Retained - Handle LY", "Retained - Handle CY", "Reax - Handle CY"], "fmt": "number"}, {"x": 6, "y": 10, "w": 6, "h": 8, "type": "line", "title": "NFL Actives YoY", "xlabel": "Date", "series": ["Reax - Actives CY", "Retained - Actives CY", "Reax - Actives LY", "Retained - Actives LY"], "fmt": "number"}, {"x": 0, "y": 18, "w": 6, "h": 8, "type": "line", "title": "CFB Handle YoY", "xlabel": "Date", "series": ["Reax - Handle LY", "Retained - Handle LY", "Retained - Handle CY", "Reax - Handle CY"], "fmt": "number"}, {"x": 6, "y": 18, "w": 6, "h": 8, "type": "line", "title": "CFB Actives YoY", "xlabel": "Date", "series": ["Reax - Actives CY", "Retained - Actives CY", "Reax - Actives LY", "Retained - Actives LY"], "fmt": "number"}, {"x": 0, "y": 26, "w": 12, "h": 1, "type": "text", "text": "Performance to Date"}, {"x": 0, "y": 27, "w": 4, "h": 3, "type": "counter", "title": "Total - Handle YoY", "fmt": "percent", "field": "yoy pct total handle"}, {"x": 4, "y": 27, "w": 4, "h": 3, "type": "counter", "title": "Retained - Handle YoY", "fmt": "percent", "field": "yoy pct retained handle"}, {"x": 8, "y": 27, "w": 4, "h": 3, "type": "counter", "title": "Reax - Handle YoY", "fmt": "percent", "field": "yoy pct reax handle"}, {"x": 0, "y": 30, "w": 4, "h": 3, "type": "counter", "title": "Total - Actives YoY", "fmt": "percent", "field": "yoy pct total distinct actives"}, {"x": 4, "y": 30, "w": 4, "h": 3, "type": "counter", "title": "Retained - Actives YoY", "fmt": "percent", "field": "yoy pct retained distinct actives"}, {"x": 8, "y": 30, "w": 4, "h": 3, "type": "counter", "title": "Reax - Actives YoY", "fmt": "percent", "field": "yoy pct reax distinct actives"}, {"x": 0, "y": 33, "w": 4, "h": 3, "type": "counter", "title": "Total - Player Days vs Forecast", "fmt": "percent", "field": "yoy pct total actives"}, {"x": 4, "y": 33, "w": 4, "h": 3, "type": "counter", "title": "Total - Player Days vs Forecast", "fmt": "percent", "field": "yoy pct retained actives"}, {"x": 8, "y": 33, "w": 4, "h": 3, "type": "counter", "title": "Total - Player Days vs Forecast", "fmt": "percent", "field": "yoy pct reax actives"}]}, {"name": "Daily Actives vs Forecast", "widgets": [{"x": 0, "y": 0, "w": 3, "h": 1, "type": "filter-multi-select", "title": "Reax Flag (Simple)", "field": "reax flag simple"}, {"x": 3, "y": 0, "w": 3, "h": 1, "type": "filter-multi-select", "title": "Activation Year", "field": "activation date"}, {"x": 6, "y": 0, "w": 3, "h": 1, "type": "filter-multi-select", "title": "Primary Sport", "field": "classification 365d primary"}, {"x": 9, "y": 0, "w": 3, "h": 1, "type": "filter-multi-select", "title": "Segment", "field": "segment 30d"}, {"x": 0, "y": 1, "w": 12, "h": 2, "type": "text", "text": "Actives"}, {"x": 0, "y": 3, "w": 12, "h": 6, "type": "line", "title": "Daily Actives vs Forecast (Placed)", "xlabel": "Date", "series": ["Forecasted Actives", "Actual Actives"], "fmt": "percent"}, {"x": 0, "y": 9, "w": 12, "h": 6, "type": "line", "title": "Daily Actives vs Last Year (Placed)", "xlabel": "Date", "series": ["Actual Actives", "Last Year Actives"], "fmt": "percent"}, {"x": 0, "y": 15, "w": 12, "h": 2, "type": "text", "text": "Handle"}, {"x": 0, "y": 17, "w": 12, "h": 6, "type": "line", "title": "Daily Handle vs Forecast (Placed)", "xlabel": "Date", "series": ["Forecast Handle", "Acual Handle"], "fmt": "percent"}, {"x": 0, "y": 23, "w": 12, "h": 6, "type": "line", "title": "Daily Handle vs Last Year (Placed)", "xlabel": "Date", "series": ["Actual Handle", "Last Year Handle"], "fmt": "percent"}]}, {"name": "Leading Indicators", "widgets": [{"x": 0, "y": 0, "w": 12, "h": 2, "type": "text", "text": "Leading Indicators"}, {"x": 0, "y": 2, "w": 3, "h": 2, "type": "filter-single-select", "title": "Sport", "field": "sport scope"}, {"x": 3, "y": 2, "w": 9, "h": 2, "type": "text", "text": "Manual L4L: select CY and LY dates independently for both periods. Defaults preserve weekday/slate timing for the later 2026 football start."}, {"x": 0, "y": 4, "w": 3, "h": 2, "type": "filter-date-picker", "title": "P1 CY start", "field": ""}, {"x": 3, "y": 4, "w": 3, "h": 2, "type": "filter-date-picker", "title": "P1 CY end", "field": ""}, {"x": 6, "y": 4, "w": 3, "h": 2, "type": "filter-date-picker", "title": "P1 LY start", "field": ""}, {"x": 9, "y": 4, "w": 3, "h": 2, "type": "filter-date-picker", "title": "P1 LY end", "field": ""}, {"x": 0, "y": 6, "w": 3, "h": 2, "type": "filter-date-picker", "title": "P2 CY start", "field": ""}, {"x": 3, "y": 6, "w": 3, "h": 2, "type": "filter-date-picker", "title": "P2 CY end", "field": ""}, {"x": 6, "y": 6, "w": 3, "h": 2, "type": "filter-date-picker", "title": "P2 LY start", "field": ""}, {"x": 9, "y": 6, "w": 3, "h": 2, "type": "filter-date-picker", "title": "P2 LY end", "field": ""}, {"x": 0, "y": 8, "w": 12, "h": 3, "type": "table", "title": "Selected L4L windows", "columns": ["L4L alignment check", "Period 1 comparison", "Period 2 comparison"]}, {"x": 0, "y": 11, "w": 12, "h": 11, "type": "table", "title": "Leading indicators \u2014 Period 1 vs Period 2", "columns": ["Metric", "Period 1 CY", "Period 1 LY", "Period 1 L4L YoY", "Period 2 CY", "Period 2 LY", "Period 2 L4L YoY", "P2 vs P1 (pp)"]}]}, {"name": "Retention", "widgets": [{"x": 0, "y": 0, "w": 12, "h": 2, "type": "text", "text": "Week over Week NFL Retention"}, {"x": 0, "y": 2, "w": 2, "h": 1, "type": "filter-multi-select", "title": "Week", "field": "week label"}, {"x": 2, "y": 2, "w": 2, "h": 1, "type": "filter-multi-select", "title": "Segment", "field": "segment 30d"}, {"x": 4, "y": 2, "w": 1, "h": 1, "type": "filter-multi-select", "title": "Reax Flag", "field": "reax flag"}, {"x": 5, "y": 2, "w": 1, "h": 1, "type": "filter-multi-select", "title": "State", "field": "state"}, {"x": 6, "y": 2, "w": 3, "h": 1, "type": "filter-multi-select", "title": "Last Football Bet", "field": "last football bet"}, {"x": 9, "y": 2, "w": 3, "h": 1, "type": "filter-multi-select", "title": "Activation Year", "field": "activation date"}, {"x": 0, "y": 3, "w": 12, "h": 8, "type": "bar", "title": "", "xlabel": "Week", "series": ["2025 Retention Pct", "2026 Retention Pct"], "fmt": "percent"}, {"x": 0, "y": 11, "w": 12, "h": 6, "type": "pivot", "title": "", "columns": ["2025 - Prior Week Actives", "2025 - Retained User", "2026 - Prior Week Actives", "2026 - Retained Users"]}, {"x": 0, "y": 17, "w": 12, "h": 2, "type": "text", "text": "Week over Week Football  Retention"}, {"x": 0, "y": 19, "w": 2, "h": 1, "type": "filter-multi-select", "title": "Week", "field": "week label"}, {"x": 2, "y": 19, "w": 2, "h": 1, "type": "filter-multi-select", "title": "Segment", "field": "segment 30d"}, {"x": 4, "y": 19, "w": 2, "h": 1, "type": "filter-multi-select", "title": "State", "field": "state"}, {"x": 6, "y": 19, "w": 2, "h": 1, "type": "filter-multi-select", "title": "Reax Flag", "field": "reax flag"}, {"x": 8, "y": 19, "w": 2, "h": 1, "type": "filter-multi-select", "title": "Last Football Bet", "field": "last football bet"}, {"x": 10, "y": 19, "w": 2, "h": 1, "type": "filter-multi-select", "title": "Activation Year", "field": "activation date"}, {"x": 0, "y": 20, "w": 12, "h": 8, "type": "bar", "title": "", "xlabel": "Week", "series": ["Retention 25", "Retention 26"], "fmt": "percent"}, {"x": 0, "y": 28, "w": 12, "h": 6, "type": "pivot", "title": "", "columns": ["2025 - Prior Week Actives", "2025 - Retained User", "2026 - Prior Week Actives", "2026 - Retained Users"]}]}, {"name": "Team and Player Metrics", "widgets": [{"x": 0, "y": 0, "w": 12, "h": 1, "type": "text", "text": "Top Teams Contribution - Settled Handle"}, {"x": 0, "y": 1, "w": 4, "h": 1, "type": "filter-single-select", "title": "Week", "field": "week label"}, {"x": 4, "y": 1, "w": 4, "h": 1, "type": "filter-single-select", "title": "State", "field": "state"}, {"x": 8, "y": 1, "w": 4, "h": 1, "type": "filter-single-select", "title": "League", "field": "league"}, {"x": 0, "y": 2, "w": 6, "h": 7, "type": "bar", "title": "Handle by Game Rank", "xlabel": "Rank", "series": ["season", "rank band", "band game handle"], "fmt": "number"}, {"x": 6, "y": 2, "w": 6, "h": 7, "type": "bar", "title": "Handle Share by Game Rank", "xlabel": "Rank", "series": ["season", "band handle contribution pct", "rank band"], "fmt": "percent"}, {"x": 0, "y": 9, "w": 12, "h": 1, "type": "text", "text": "Team Metrics - Settled Handle"}, {"x": 0, "y": 10, "w": 3, "h": 1, "type": "filter-single-select", "title": "Week", "field": "week label"}, {"x": 3, "y": 10, "w": 3, "h": 1, "type": "filter-single-select", "title": "State", "field": "state"}, {"x": 6, "y": 10, "w": 2, "h": 1, "type": "filter-single-select", "title": "League", "field": "league"}, {"x": 8, "y": 10, "w": 2, "h": 1, "type": "filter-single-select", "title": "Conference", "field": "conference"}, {"x": 10, "y": 10, "w": 2, "h": 1, "type": "filter-single-select", "title": "Team", "field": "team"}, {"x": 0, "y": 11, "w": 12, "h": 8, "type": "table", "title": "Weekly View", "columns": ["team", "Actives 2025", "Actives 2026", "Activies Nominal Difference", "Active % Difference", "Handle 2025", "Handle 2026", "Handle Nominal Difference", "Handle % Difference"]}, {"x": 0, "y": 19, "w": 12, "h": 8, "type": "table", "title": "Cumulative View", "columns": ["team", "Actives 2025", "Actives 2026", "Actives Nominal Difference", "Active % Difference", "Handle 2025", "Handle 2026", "Handle Nominal Difference", "Handle % Difference"]}, {"x": 0, "y": 27, "w": 12, "h": 1, "type": "text", "text": "Player Metrics - Settled Handle"}, {"x": 0, "y": 28, "w": 4, "h": 1, "type": "filter-single-select", "title": "NFL Week", "field": "nfl week"}, {"x": 4, "y": 28, "w": 4, "h": 1, "type": "filter-single-select", "title": "State", "field": "state"}, {"x": 8, "y": 28, "w": 4, "h": 1, "type": "filter-single-select", "title": "Player", "field": "player"}, {"x": 0, "y": 29, "w": 12, "h": 8, "type": "table", "title": "Weekly View", "columns": ["player", "Actives 2025", "Actives 2026", "Actives Nominal Difference", "Actives % Difference", "Handle 2025", "Handle 2026", "Handle Nominal DIfference", "Handle % Difference"]}, {"x": 0, "y": 37, "w": 12, "h": 8, "type": "table", "title": "Cumulative View", "columns": ["player", "Actives 2025", "Actives 2026", "Actives Nominal Difference", "Actives % Difference", "Handle 2025", "Handle 2026", "Handle Nominal Difference", "Handle % Difference"]}, {"x": 0, "y": 45, "w": 12, "h": 1, "type": "text", "text": "Game Metrics"}, {"x": 0, "y": 46, "w": 2, "h": 1, "type": "filter-single-select", "title": "Season", "field": "season label"}, {"x": 2, "y": 46, "w": 3, "h": 1, "type": "filter-single-select", "title": "Sport", "field": "sport"}, {"x": 5, "y": 46, "w": 3, "h": 1, "type": "filter-single-select", "title": "Week", "field": "week label"}, {"x": 8, "y": 46, "w": 4, "h": 1, "type": "filter-single-select", "title": "Game Flag", "field": "game flag"}, {"x": 0, "y": 47, "w": 12, "h": 8, "type": "table", "title": "Cumulative View", "columns": ["Week", "Game", "Handle", "Actives", "Bets", "Legs", "GGR"]}]}, {"name": "Summary Metric View", "widgets": [{"x": 0, "y": 0, "w": 6, "h": 1, "type": "filter-single-select", "title": "Dimension 1", "field": "dimension 1"}, {"x": 6, "y": 0, "w": 6, "h": 1, "type": "filter-date-picker", "title": "End Date", "field": ""}, {"x": 0, "y": 1, "w": 12, "h": 1, "type": "text", "text": "Summary Metric View"}, {"x": 0, "y": 2, "w": 12, "h": 13, "type": "table", "title": "", "columns": ["Dimension 1", "Handle 2026", "Handle YoY", "Handle vs Forecast", "Actual AHPU", "AHPU YoY %", "AHPU vs Forecast", "APD Actual", "APDs YoY", "APDs vs Forecast", "CFB Handle YoY", "NFL Handle YoY"]}]}, {"name": "Cumulative View", "widgets": [{"x": 0, "y": 0, "w": 3, "h": 1, "type": "filter-single-select", "title": "Dimension 1", "field": "dimension 1"}, {"x": 3, "y": 0, "w": 3, "h": 1, "type": "filter-single-select", "title": "Dimension 2", "field": "dimension 2"}, {"x": 6, "y": 0, "w": 3, "h": 1, "type": "filter-single-select", "title": "Dimension 3", "field": "dimension 3"}, {"x": 9, "y": 0, "w": 3, "h": 1, "type": "filter-date-picker", "title": "End Date", "field": ""}, {"x": 0, "y": 1, "w": 12, "h": 1, "type": "text", "text": "Cumulative View"}, {"x": 0, "y": 2, "w": 12, "h": 15, "type": "table", "title": "", "columns": ["Dimension 1", "Dimension 2", "Dimension 3", "2025 Actives - Cumulative", "Forecast Actives - Cumulative", "2026 Actives - Cumulative", "Actives vs Forecast %", "Actives vs Forecast Nom", "2025 Handle", "Forecast Handle", "2026 Handle", "Handle vs Forecast $", "Handle vs Forecast %", "RTC", "Actives Actual 2025", "Actives Forecast 2026", "Actives Actual 2026"]}]}, {"name": "Global Filters", "widgets": []}, {"name": "Daily View - Placed", "widgets": [{"x": 0, "y": 0, "w": 2, "h": 1, "type": "filter-single-select", "title": "Dimension 1", "field": "dimension 1"}, {"x": 2, "y": 0, "w": 2, "h": 1, "type": "filter-single-select", "title": "Dimension 2", "field": "dimension 2"}, {"x": 4, "y": 0, "w": 2, "h": 1, "type": "filter-single-select", "title": "Dimension 3", "field": "dimension 3"}, {"x": 6, "y": 0, "w": 2, "h": 1, "type": "filter-single-select", "title": "Sport", "field": ""}, {"x": 8, "y": 0, "w": 2, "h": 1, "type": "filter-date-picker", "title": "Start Date", "field": ""}, {"x": 10, "y": 0, "w": 2, "h": 1, "type": "filter-date-picker", "title": "End Date", "field": ""}, {"x": 0, "y": 1, "w": 12, "h": 1, "type": "text", "text": "Daily View"}, {"x": 0, "y": 2, "w": 12, "h": 15, "type": "table", "title": "", "columns": ["Date", "Dimension 1", "Dimension 2", "Dimension 3", "Daily Actives - 2025", "Daily Actives - Forecast", "Daily Actives - 2026", "Actives vs Forecast %", "Daily Handle - 2025", "Daily Handle - Forecast", "Daily Handle - 2026", "Handle vs Forecast %"]}]}, {"name": "Daily View - Settled", "widgets": [{"x": 0, "y": 0, "w": 2, "h": 1, "type": "filter-single-select", "title": "Dimension 1", "field": "dimension 1"}, {"x": 2, "y": 0, "w": 2, "h": 1, "type": "filter-single-select", "title": "Dimension 2", "field": "dimension 2"}, {"x": 4, "y": 0, "w": 2, "h": 1, "type": "filter-single-select", "title": "Dimension 3", "field": "dimension 3"}, {"x": 6, "y": 0, "w": 2, "h": 1, "type": "filter-single-select", "title": "Sport", "field": "football subsport"}, {"x": 8, "y": 0, "w": 2, "h": 1, "type": "filter-date-picker", "title": "Start Date", "field": ""}, {"x": 10, "y": 0, "w": 2, "h": 1, "type": "filter-date-picker", "title": "End Date", "field": ""}, {"x": 0, "y": 1, "w": 12, "h": 1, "type": "text", "text": "Daily View"}, {"x": 0, "y": 2, "w": 12, "h": 15, "type": "table", "title": "", "columns": ["date", "Dimension 1", "Dimension 2", "Dimension 3", "Actives Actual 2025", "Actives Actual 2026", "Actives Difference YoY", "Actives Pct Difference YoY", "Handle Actual 2025", "Handle Actual 2026", "Handle Difference YoY", "Handle Pct Difference YoY"]}]}, {"name": "Bet Mix-SWAP", "widgets": [{"x": 0, "y": 0, "w": 12, "h": 1, "type": "text", "text": "Handle Mix"}, {"x": 0, "y": 1, "w": 6, "h": 1, "type": "filter-single-select", "title": "Week Label", "field": "week label"}, {"x": 6, "y": 1, "w": 6, "h": 1, "type": "filter-single-select", "title": "Sport", "field": "sport"}, {"x": 0, "y": 2, "w": 6, "h": 6, "type": "bar", "title": "Handle Mix YoY", "xlabel": "Bet Type", "series": ["season year", "handle mix", "bet type"], "fmt": "percent"}, {"x": 6, "y": 2, "w": 6, "h": 6, "type": "line", "title": "Handle Mix PP Difference YoY", "xlabel": "Week", "series": ["bet type", "Handle PP Difference", "week label"], "fmt": "number"}, {"x": 0, "y": 8, "w": 12, "h": 1, "type": "text", "text": "Contribution to Change"}, {"x": 0, "y": 9, "w": 6, "h": 6, "type": "bar", "title": "Handle Contribution to Change", "xlabel": "Bet Type", "series": ["bet type", "handle contribution"], "fmt": "percent"}, {"x": 6, "y": 9, "w": 6, "h": 6, "type": "bar", "title": "Bet Contribution to Change", "xlabel": "Bet Type", "series": ["bet contribution", "bet type"], "fmt": "percent"}, {"x": 0, "y": 15, "w": 12, "h": 1, "type": "text", "text": "SWAP-SWAL"}, {"x": 0, "y": 16, "w": 12, "h": 6, "type": "pivot", "title": "", "columns": ["SWAL", "SWAP"]}]}, {"name": "High+ Bonus", "widgets": [{"x": 0, "y": 0, "w": 12, "h": 1, "type": "text", "text": "High+ Geno"}, {"x": 0, "y": 1, "w": 6, "h": 9, "type": "bar", "title": "High+ Offer Rate", "xlabel": "Week", "series": ["season year", "Offer Rate", "week label"], "fmt": "percent"}, {"x": 6, "y": 1, "w": 6, "h": 9, "type": "bar", "title": "High+ Participation Rate", "xlabel": "Week", "series": ["season year", "Participation Rate", "week label"], "fmt": "percent"}, {"x": 0, "y": 10, "w": 12, "h": 9, "type": "pivot", "title": "", "columns": ["Week", "Offer Rate", "Participation Rate", "Total Customers", "Customers Offered", "Customers Used"]}]}, {"name": "IntraWeek Retention", "widgets": [{"x": 0, "y": 0, "w": 12, "h": 1, "type": "text", "text": "Raw Data"}, {"x": 0, "y": 1, "w": 12, "h": 8, "type": "pivot", "title": "", "columns": ["NFL Week", "Period 1", "Period 2", "Active Period 1", "Active Period 2 Retained", "Active Retention", "Handle Period 1", "Handle Period 2 Retained"]}]}, {"name": "Intra-Day: All Sports", "widgets": [{"x": 0, "y": 0, "w": 12, "h": 2, "type": "text", "text": "Intra-day Pacing: All Sports"}, {"x": 0, "y": 2, "w": 3, "h": 2, "type": "filter-single-select", "title": "View", "field": "view mode"}, {"x": 3, "y": 2, "w": 4, "h": 2, "type": "filter-single-select", "title": "Business date (fixed UTC\u22128)", "field": "business date label"}, {"x": 7, "y": 2, "w": 3, "h": 2, "type": "filter-single-select", "title": "As of (New York label)", "field": "asof filter label"}, {"x": 10, "y": 2, "w": 2, "h": 2, "type": "filter-single-select", "title": "Metric", "field": "metric series"}, {"x": 0, "y": 4, "w": 12, "h": 6, "type": "table", "title": "Pacing outlook by 15-minute cutoff \u2014 9:00 AM ET onward", "columns": ["15-minute cutoff (ET)", "Status", "Available in source refresh", "Placed through as-of", "Pace-implied settled", "Team settled forecast", "Pace vs forecast", "Historical P80 error (\u00b1)", "Selected model", "Model confidence"]}, {"x": 0, "y": 10, "w": 12, "h": 8, "type": "line", "title": "Cumulative pacing \u2014 selected business date", "xlabel": "New York time", "series": ["Actual placed (solid history)", "Forecast-implied placed curve (static)", "Pace projection from selected as-of", "Pace 80% lower boundary", "Pace 80% upper boundary"], "fmt": "number"}, {"x": 0, "y": 18, "w": 12, "h": 8, "type": "combo", "title": "Placed volume by 15-minute interval", "xlabel": "New York time", "series": ["display time axis label", "actual interval placed", "pace projected interval placed"], "fmt": "number"}, {"x": 0, "y": 26, "w": 12, "h": 8, "type": "line", "title": "Settled outlook by refresh \u2014 selected business date", "xlabel": "New York time", "series": ["Pace-implied final settled", "Team settled forecast", "Calibrated 80% lower", "Calibrated 80% upper"], "fmt": "number"}, {"x": 0, "y": 34, "w": 6, "h": 2, "type": "counter", "title": "Data through", "fmt": "number", "field": "asof label et"}, {"x": 6, "y": 34, "w": 6, "h": 2, "type": "counter", "title": "Status", "fmt": "number", "field": "operational status display"}, {"x": 0, "y": 36, "w": 3, "h": 2, "type": "counter", "title": "Pace Implied Settled Final", "fmt": "number", "field": "pace projected final settled"}, {"x": 3, "y": 36, "w": 3, "h": 2, "type": "counter", "title": "Settled Handle Target", "fmt": "number", "field": "forecast final settled"}, {"x": 6, "y": 36, "w": 2, "h": 2, "type": "counter", "title": "Pace vs forecast", "fmt": "percent", "field": "pace vs forecast pct"}, {"x": 8, "y": 36, "w": 4, "h": 2, "type": "counter", "title": "Calibrated 80% range", "fmt": "number", "field": "pace vs forecast 80 range label"}]}, {"name": "Intra-Day: NFL Only", "widgets": [{"x": 0, "y": 0, "w": 12, "h": 2, "type": "text", "text": "NFL Pacing - NFL Only"}, {"x": 0, "y": 2, "w": 3, "h": 2, "type": "filter-single-select", "title": "View", "field": "view mode"}, {"x": 3, "y": 2, "w": 5, "h": 2, "type": "filter-single-select", "title": "Business date (fixed UTC\u22128)", "field": "business date label"}, {"x": 8, "y": 2, "w": 4, "h": 2, "type": "filter-single-select", "title": "As of (New York label)", "field": "asof filter label"}, {"x": 0, "y": 4, "w": 12, "h": 6, "type": "table", "title": "Pacing outlook by 15-minute cutoff \u2014 9:00 AM ET onward", "columns": ["15-minute cutoff (ET)", "Status", "Available in source refresh", "Placed through as-of", "Pace-implied settled", "Team settled forecast", "Pace vs forecast", "Historical P80 error (\u00b1)", "Selected model", "Model confidence"]}, {"x": 0, "y": 10, "w": 12, "h": 8, "type": "line", "title": "Cumulative pacing \u2014 selected business date", "xlabel": "New York time", "series": ["Actual placed (solid history)", "Forecast-implied placed curve (static)", "Pace projection from selected as-of", "Pace 80% lower boundary", "Pace 80% upper boundary"], "fmt": "number"}, {"x": 0, "y": 18, "w": 12, "h": 8, "type": "combo", "title": "Placed volume by 15-minute interval", "xlabel": "New York time", "series": ["display time axis label", "actual interval placed", "pace projected interval placed"], "fmt": "number"}, {"x": 0, "y": 26, "w": 12, "h": 8, "type": "line", "title": "Settled outlook by refresh \u2014 selected business date", "xlabel": "New York time", "series": ["Pace-implied final settled", "Team settled forecast", "Calibrated 80% lower", "Calibrated 80% upper"], "fmt": "number"}, {"x": 0, "y": 34, "w": 6, "h": 2, "type": "counter", "title": "Data through", "fmt": "number", "field": "asof label et"}, {"x": 6, "y": 34, "w": 6, "h": 2, "type": "counter", "title": "Status", "fmt": "number", "field": "operational status display"}, {"x": 0, "y": 36, "w": 3, "h": 2, "type": "counter", "title": "Pace Implied Settled Final", "fmt": "number", "field": "pace projected final settled"}, {"x": 3, "y": 36, "w": 3, "h": 2, "type": "counter", "title": "Settled Handle Target", "fmt": "number", "field": "forecast final settled"}, {"x": 6, "y": 36, "w": 2, "h": 2, "type": "counter", "title": "Pace vs forecast", "fmt": "percent", "field": "pace vs forecast pct"}, {"x": 8, "y": 36, "w": 4, "h": 2, "type": "counter", "title": "Calibrated 80% range", "fmt": "number", "field": "pace vs forecast 80 range label"}]}];
+
+// ---------- deterministic dummy data ----------
+let seed = 11;
+function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+function series(n, base, amp, trend = 0) {
+  return Array.from({ length: n }, (_, i) => Math.max(0, base + trend * i + (rnd() - 0.5) * amp));
+}
+const fmt = (n, d = 0) => Number(n).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
+const fmtMoney = n => "$" + (n >= 1e9 ? fmt(n / 1e9, 2) + "B" : n >= 1e6 ? fmt(n / 1e6, 1) + "M" : fmt(n / 1e3, 0) + "K");
+const fmtNum = n => (n >= 1e6 ? fmt(n / 1e6, 2) + "M" : n >= 1e3 ? fmt(n / 1e3, 1) + "K" : fmt(n));
+const pctTxt = n => (n >= 0 ? "+" : "") + fmt(n, 1) + "%";
+
+// Pick a dummy scale from the widget title so handle, actives and percent charts look right
+function kindOf(title, fmtHint) {
+  const t = (title || "").toLowerCase();
+  if (t.includes("handle") && !t.includes("%") && !t.includes("vs")) return "money";
+  if (t.includes("actives") || t.includes("player day") || t.includes("users")) return "num";
+  if (fmtHint === "money") return "money";
+  return "pct";
+}
+function dummyValue(kind, title) {
+  const r = rnd();
+  if (kind === "pct") return { txt: pctTxt((r - 0.45) * 12), up: true };
+  if (kind === "money") return { txt: fmtMoney((0.8 + r) * (/total|ytd|cy|ly/i.test(title) ? 2.4e9 : 1.6e7)) };
+  return { txt: fmtNum((0.5 + r) * (/total|cy|ly/i.test(title) ? 2.1e6 : 2.2e5)) };
+}
+
+// Each curve gets its own level and shape, keyed off its name, so Reax, Retained,
+// Actual and Forecast separate instead of stacking on top of each other.
+function seriesFor(name, n, base) {
+  const s = name.toLowerCase();
+  let mult = 1, trend = 0.003, noise = 0.06, wave = 0;
+  if (/reax/.test(s)) mult = 1.3;
+  if (/retained/.test(s)) mult = 0.72;
+  if (/\bly\b|last year/.test(s)) { mult = 0.88; trend = 0.001; noise = 0.03; }
+  if (/forecast/.test(s)) { noise = 0.01; wave = 0.06; trend = 0.002; }
+  if (/actual|acual|\bcy\b/.test(s)) { noise = 0.16; trend = 0.006; }
+  return Array.from({ length: n }, (_, i) =>
+    Math.max(0, base * mult * (1 + trend * i + wave * Math.sin(i / 3) + (rnd() - 0.5) * noise)));
+}
+
+const LABEL_DAYS = Array.from({ length: 30 }, (_, i) => `11/${String(i + 1).padStart(2, "0")}`);
+const LABEL_WEEKS = ["W36","W37","W38","W39","W40","W41","W42","W43","W44","W45","W46","W47"];
+const LABEL_HOURS = ["10a","12p","2p","4p","6p","8p","10p","12a"];
+function axisFor(w) {
+  const x = (w.xlabel || "").toLowerCase();
+  if (x.includes("week")) return LABEL_WEEKS;
+  if (x.includes("time") || x.includes("hour")) return LABEL_HOURS;
+  return LABEL_DAYS;
+}
+
+// ---------- charts / tables ----------
+const PALETTE = ["#2563eb", "#f59e0b", "#10b981", "#8b5cf6"];
+
+function lineChart(labels, sers, type) {
+  const W = 800, H = 210, P = 36, B = 26;
+  const all = sers.flatMap(s => s.data);
+  const max = (Math.max(...all) || 1) * 1.12;
+  const innerW = W - 2 * P, innerH = H - B - 8;
+  const x = i => P + (i * innerW) / Math.max(1, labels.length - 1);
+  const y = v => 8 + innerH - (v / max) * innerH;
+  let body = "";
+  for (let g = 0; g <= 3; g++) {
+    const gv = (max * g) / 3, gy = y(gv);
+    body += `<line x1="${P}" x2="${W - P}" y1="${gy}" y2="${gy}" stroke="var(--line)" stroke-dasharray="${g ? "3 4" : "0"}"/>`;
+    body += `<text x="${P - 8}" y="${gy + 4}" font-size="10" text-anchor="end" fill="var(--muted)">${fmt(gv)}</text>`;
+  }
+  if (type === "bar") {
+    const slot = innerW / labels.length;
+    const bw = slot / (sers.length + 1.2);
+    sers.forEach((s, si) => s.data.forEach((v, i) => {
+      const bx = P + i * slot + si * bw + bw * 0.35;
+      body += `<rect x="${bx}" y="${y(v)}" width="${bw * 0.85}" height="${Math.max(0, 8 + innerH - y(v))}" fill="${PALETTE[si % 4]}" rx="4"/>`;
+    }));
+    const step = Math.ceil(labels.length / 10);
+    labels.forEach((l, i) => { if (i % step === 0) body += `<text x="${P + i * slot + slot / 2}" y="${H - 6}" font-size="10" text-anchor="middle" fill="var(--muted)">${l}</text>`; });
+  } else {
+    // soft area under the first series for depth
+    const first = sers[0];
+    if (first) {
+      const top = first.data.map((v, i) => `${x(i)},${y(v)}`).join(" L");
+      body += `<path d="M${x(0)},${y(0)} L${top} L${x(labels.length - 1)},${y(0)} Z" fill="${PALETTE[0]}" opacity=".08"/>`;
+    }
+    sers.forEach((s, si) => {
+      const pts = s.data.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+      body += `<polyline points="${pts}" fill="none" stroke="${PALETTE[si % 4]}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" ${si % 2 ? 'stroke-dasharray="6 5"' : ""}/>`;
+    });
+    const step = Math.ceil(labels.length / 8);
+    labels.forEach((l, i) => { if (i % step === 0) body += `<text x="${x(i)}" y="${H - 6}" font-size="10" text-anchor="middle" fill="var(--muted)">${l}</text>`; });
+  }
+  const legend = sers.map((s, si) => `<span style="--c:${PALETTE[si % 4]}">${s.name}</span>`).join("");
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${body}</svg><div class="legend">${legend}</div>`;
+}
+
+function renderWidget(w, idx) {
+  const box = `grid-column: ${w.x + 1} / span ${w.w}; grid-row: ${w.y + 1} / span ${w.h};`;
+  const wrap = inner => `<div class="w" style="${box}">${inner}</div>`;
+
+  if (w.type === "text") {
+    return wrap(`<div class="${w.h >= 2 ? "heading" : "sub"}">${escapeHtml(w.text)}</div>`);
+  }
+  if (w.type.startsWith("filter")) {
+    const val = w.type === "filter-date-picker" ? "2026-09-01 → 2026-11-24" : "All";
+    return wrap(`<div class="chip">${escapeHtml(w.title || w.field || "Filter")} <b>${val}</b><span class="caret">▾</span></div>`);
+  }
+  if (w.type === "counter") {
+    const kind = w.fmt === "percent" ? "pct" : kindOf(w.title, w.fmt);
+    const v = dummyValue(kind, w.title);
+    const isPct = kind === "pct";
+    const cls = isPct ? (v.txt.startsWith("-") ? "down" : "up") : "up";
+    const dl = isPct ? "" : `<div class="delta ${cls}">${pctTxt((rnd() - 0.4) * 8)} vs LY</div>`;
+    return wrap(`<div class="surface kpi"><div class="t">${escapeHtml(w.title)}</div><div class="big">${v.txt}</div>${dl}</div>`);
+  }
+  if (w.type === "line" || w.type === "bar" || w.type === "combo" || w.type === "area") {
+    const labels = axisFor(w);
+    const kind = kindOf(w.title, w.fmt);
+    const base = kind === "money" ? 1.4e7 : kind === "num" ? 2.2e5 : 80;
+    const names = (w.series && w.series.length ? w.series : ["Series 1", "Series 2"]).slice(0, 4);
+    const sers = names.map(n => ({ name: n, data: seriesFor(n, labels.length, base) }));
+    return wrap(`<div class="surface"><div class="t">${escapeHtml(w.title)}</div>${lineChart(labels, sers, w.type === "bar" ? "bar" : "line")}</div>`);
+  }
+  if (w.type === "table" || w.type === "pivot") {
+    const cols = (w.columns && w.columns.length ? w.columns : ["Item", "Value"]).slice(0, 8);
+    const rows = Array.from({ length: 5 }, (_, r) => cols.map((c, ci) => ci === 0 ? `Row ${r + 1}` : fmtNum(rnd() * 1e5)));
+    const head = cols.map(c => `<th>${escapeHtml(c)}</th>`).join("");
+    const body = rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("");
+    return wrap(`<div class="surface"><div class="t">${escapeHtml(w.title || "Table")}</div><div class="tbl"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></div>`);
+  }
+  return wrap(`<div class="surface"><div class="t">${escapeHtml(w.title || w.type)}</div><div class="ph">${w.type === "custom-vega-viz" ? "Custom visual (Vega) · placeholder" : "Placeholder"}</div></div>`);
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ---------- tabs ----------
+const tabsEl = document.getElementById("tabs");
+const mainEl = document.getElementById("main");
+PAGES.forEach((pg, i) => {
+  const b = document.createElement("button");
+  b.setAttribute("role", "tab");
+  b.setAttribute("aria-selected", i === 0);
+  b.textContent = pg.name;
+  b.onclick = () => select(i);
+  tabsEl.appendChild(b);
+  const s = document.createElement("section");
+  s.className = "panel" + (i === 0 ? " active" : "");
+  const maxRow = Math.max(...pg.widgets.map(w => w.y + w.h), 1);
+  s.innerHTML = `<div class="grid" style="grid-template-rows: repeat(${maxRow}, 34px);">` +
+    pg.widgets.map((w, k) => renderWidget(w, k)).join("") + `</div>`;
+  mainEl.appendChild(s);
+});
+function select(i) {
+  [...tabsEl.children].forEach((b, j) => b.setAttribute("aria-selected", j === i));
+  [...mainEl.children].forEach((s, j) => s.classList.toggle("active", j === i));
+  tabsEl.children[i].scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+</script>
+</body>
+</html>
